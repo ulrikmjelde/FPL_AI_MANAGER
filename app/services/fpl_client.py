@@ -81,24 +81,63 @@ class FPLClient:
     async def latest_transfers(self) -> list[dict]:
         return (await self._request('GET', f'/entry/{self.s.fpl_entry_id}/transfers-latest/')).json()
 
-    async def make_transfers(self, *, event: int, transfers: list[dict], chip: str | None = None) -> dict:
-        payload = {'chip': chip, 'entry': self.s.fpl_entry_id, 'event': event, 'transfers': transfers}
-        return (await self._request('POST', '/transfers/', json=payload)).json()
+    async def make_transfers(
+        self,
+        *,
+        event: int,
+        transfers: list[dict],
+        chip: str | None = None,
+    ) -> dict:
+        payload = {
+            "chip": chip,
+            "entry": self.s.fpl_entry_id,
+            "event": event,
+            "transfers": transfers,
+        }
 
-def _load_refresh_token(self) -> str | None:
-    if self.refresh_token_file:
+        response = await self._request(
+            "POST",
+            "/transfers/",
+            json=payload,
+        )
+
+        if not response.content:
+            return {
+                "ok": True,
+                "status_code": response.status_code,
+            }
+
+        try:
+            return response.json()
+        except ValueError:
+            return {
+                "ok": True,
+                "status_code": response.status_code,
+                "text": response.text[:500],
+            }
+
+    def _load_refresh_token(self) -> str | None:
+        if self.refresh_token_file:
+            path = Path(self.refresh_token_file)
+            if path.exists():
+                token = path.read_text().strip()
+                if token:
+                    return token
+        return self.refresh_token
+
+    def _save_refresh_token(self, token: str) -> None:
+        self.refresh_token = token
+
+        if not self.refresh_token_file:
+            return
+
         path = Path(self.refresh_token_file)
-        if path.exists():
-            token = path.read_text().strip()
-            if token:
-                return token
-    return self.refresh_token
+        path.parent.mkdir(parents=True, exist_ok=True)
 
-def _save_refresh_token(self, token: str) -> None:
-    self.refresh_token = token
-
-    if not self.refresh_token_file:
-        return
+        tmp = path.with_name(path.name + ".tmp")
+        tmp.write_text(token)
+        os.chmod(tmp, 0o600)
+        tmp.replace(path)
 
     path = Path(self.refresh_token_file)
     path.parent.mkdir(parents=True, exist_ok=True)
