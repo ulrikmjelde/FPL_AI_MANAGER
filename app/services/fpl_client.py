@@ -123,6 +123,7 @@ class FPLClient:
                 token = path.read_text().strip()
                 if token:
                     return token
+
         return self.refresh_token
 
     def _save_refresh_token(self, token: str) -> None:
