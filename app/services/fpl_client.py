@@ -11,6 +11,7 @@ class FPLClient:
         self.s = settings
         self.access_token = self._normalize_token(settings.fpl_access_token)
         self.refresh_token = settings.fpl_refresh_token
+        self.refresh_token_file = settings.fpl_refresh_token_file
 
     @staticmethod
     def _normalize_token(token: str) -> str:
@@ -140,13 +141,3 @@ class FPLClient:
         os.chmod(tmp, 0o600)
         tmp.replace(path)
 
-    path = Path(self.refresh_token_file)
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(token)
-    os.chmod(tmp, 0o600)
-    tmp.replace(path)
-
-def __init__():
-    self.refresh_token_file = settings.fpl_refresh_token_file
